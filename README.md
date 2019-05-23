@@ -1,2 +1,2 @@
 # LexiconNER
-This is the implementation of "Named Entity Recognition using Positive-Unlabeled Learning" published in ACL2019.
+This is the implementation of "Named Entity Recognition using Positive-Unlabeled Learning" published at ACL2019.
