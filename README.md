@@ -66,7 +66,7 @@ optional arguments:
 e.g.)
 `python ada_dict_generation.py --model saved_model/bnpu_conll2003_PER_lr_0.0001_prior_0.3_beta_0.0_gamma_1.0_percent_1.0 --flag PER --iter 1`
 **adaptive training**
-`run python adaptivepumodel.py -h 
+`run python adaptivepumodel.py -h `
 ````html
 optional arguments:
   -h, --help            show this help message and exit
