@@ -11,7 +11,7 @@ cuda 8.0
 #### Phrase one \<train bnPU model\>
 **Train**
 Print parameters
-`run feature_pu_model.py  --h`
+`run python feature_pu_model.py  --h`
 ```html
 optional arguments:
   -h, --help            show this help message and exit
