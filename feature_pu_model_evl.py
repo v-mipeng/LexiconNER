@@ -12,14 +12,14 @@ from sub_model import CharCNN, CaseNet, WordNet, FeatureNet
 import numpy as np
 
 torch.manual_seed(1013)
-parser = argparse.ArgumentParser(description="PU NER")
-parser.add_argument('--model', default="")
-parser.add_argument('--output', default=0)
-parser.add_argument('--set', type=int, default=0)
-parser.add_argument('--flag', default="PER")
-parser.add_argument('--lr_rate', type=int, default=1e-4)
-parser.add_argument('--dataset', default="conll2003")
-parser.add_argument('--type', default="bnpu")
+parser = argparse.ArgumentParser(description="PU NER EVL")
+parser.add_argument('--model', default="", help='saved model name')
+parser.add_argument('--output', default=0, help='write the test result, set 1 for writing result to file')
+parser.add_argument('--set', type=int, default=0, help='test set or valid set')
+parser.add_argument('--flag', default="PER", help='entity type (PER/LOC/ORG/MISC)')
+parser.add_argument('--lr_rate', type=int, default=1e-4, help='learning rate')
+parser.add_argument('--dataset', default="conll2003", help='name of the dataset')
+parser.add_argument('--type', default="bnpu", help='pu learning type (bnpu/bpu/upu)')
 args = parser.parse_args()
 
 dp = DataPrepare(args.dataset)

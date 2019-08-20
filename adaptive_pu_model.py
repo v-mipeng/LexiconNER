@@ -24,7 +24,7 @@ class AdaPULSTMCNN2(nn.Module):
         self.wordModel = wordModel
         self.caseModel = caseModel
         self.featureModel = featureModel
-        self.lstm = nn.LSTM(inputSize, hiddenSize, layerNum, bias=0.5, batch_first=True, bidirectional=True)
+        self.lstm = nn.LSTM(inputSize, hiddenSize, num_layers=layerNum, batch_first=True, bidirectional=True)
         self.fc = nn.Sequential(
             nn.Linear(2 * hiddenSize, 200),
             nn.ReLU(),
@@ -56,7 +56,7 @@ class AdaPULSTMCNN2(nn.Module):
 
         lstmOut, (h, _) = self.lstm(packed_embeds)
 
-        paddedOut = pad_packed_sequence(lstmOut, sortedLen)
+        paddedOut = pad_packed_sequence(lstmOut, batch_first=True)
 
         # print(paddedOut)
 
@@ -132,7 +132,7 @@ class Trainer(object):
         unlabeledY = label.masked_select(torch.from_numpy(unlabeled).byte().cuda()).contiguous().view(-1, 2)
 
         acc = torch.mean((torch.argmax(unlabeledY, dim=1) == pred).float())
-        return acc.data, risk.data, pRisk.data, nRisk.data
+        return acc.item(), risk.item(), pRisk.item(), nRisk.item()
 
     def test(self, batch, length):
         token, case, char, feature = batch
@@ -144,7 +144,10 @@ class Trainer(object):
         # print(result)
         result = result.masked_select(torch.from_numpy(mask).byte().cuda()).contiguous().view(-1, 2)
         pred = torch.argmax(result, dim=1)
-        return pred.cpu().numpy()
+
+        temp = result[:, 1]
+
+        return pred.cpu().numpy(), temp.detach().cpu().numpy()
 
     def save(self, dir):
         if dir is not None:
@@ -158,18 +161,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PU NER")
     # data
 
-    parser.add_argument('--beta', type=float, default=0.0)
-    parser.add_argument('--gamma', type=float, default=1.0)
-    parser.add_argument('--drop_out', type=float, default=0.5)
-    parser.add_argument('--m', type=float, default=0.3)
-    parser.add_argument('--p', type=float, default=0.55)
-    parser.add_argument('--flag', default="PER")
-    parser.add_argument('--dataset', default="conll2002")
-    parser.add_argument('--lr', type=float, default=1e-4)
-    parser.add_argument('--batch_size', type=int, default=100)
+    parser.add_argument('--beta', type=float, default=0.0, help='beta of pu learning (default 0.0)')
+    parser.add_argument('--gamma', type=float, default=1.0, help='gamma of pu learning (default 1.0)')
+    parser.add_argument('--drop_out', type=float, default=0.5, help='dropout rate')
+    parser.add_argument('--m', type=float, default=1.5, help='class balance rate')
+    parser.add_argument('--p', type=float, default=0.1, help='estimate value of prior')
+    parser.add_argument('--flag', default="PER", help='entity type (PER/LOC/ORG/MISC)')
+    parser.add_argument('--dataset', default="conll2003", help='name of the dataset')
+    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
+    parser.add_argument('--batch_size', type=int, default=100, help='batch size for training and testing')
+    parser.add_argument('--output', default=0, help='write the test result, set 1 for writing result to file')
 
-    parser.add_argument('--model', default="")
-    parser.add_argument('--iter', type=int, default=1)
+    parser.add_argument('--model', default="", help='saved model name')
+    parser.add_argument('--iter', type=int, default=1, help='iteration time')
 
     args = parser.parse_args()
 
@@ -197,7 +201,7 @@ if __name__ == "__main__":
         featurenet.cuda()
         pulstmcnn.cuda()
 
-    trainer = Trainer(pulstmcnn, prior, args.beta, args.gamma, args.lr, args.m)
+    trainer = Trainer(pulstmcnn, args.p, args.beta, args.gamma, args.lr, args.m)
 
     time = 0
 
@@ -272,7 +276,7 @@ if __name__ == "__main__":
                     for xi in x:
                         correcLabels.append(xi)
                 lengths = [len(x) for x in x_word_train_batch]
-                predLabels = trainer.test(trainBatch, lengths)
+                predLabels, _ = trainer.test(trainBatch, lengths)
                 correcLabels = np.array(correcLabels)
                 # print(predLabels)
                 # print(correcLabels)
@@ -312,7 +316,7 @@ if __name__ == "__main__":
                     for xi in x:
                         correcLabels.append(xi)
                 lengths = [len(x) for x in x_word_test_batch]
-                predLabels = trainer.test(validBatch, lengths)
+                predLabels, _ = trainer.test(validBatch, lengths)
                 correcLabels = np.array(correcLabels)
                 assert len(predLabels) == len(correcLabels)
 
@@ -362,6 +366,8 @@ if __name__ == "__main__":
 
     pred_test = []
     corr_test = []
+    prob_test = []
+
     for step, (
             x_word_test_batch, x_case_test_batch, x_char_test_batch, x_feature_test_batch,
             y_test_batch) in enumerate(
@@ -372,18 +378,32 @@ if __name__ == "__main__":
             for xi in x:
                 correcLabels.append(xi)
         lengths = [len(x) for x in x_word_test_batch]
-        predLabels = trainer.test(testBatch, lengths)
+        predLabels, probLabels = trainer.test(testBatch, lengths)
         correcLabels = np.array(correcLabels)
-        assert len(predLabels) == len(correcLabels)
+        assert len(predLabels) == len(correcLabels) == len(probLabels)
 
         start = 0
         for i, l in enumerate(lengths):
             end = start + l
             p = predLabels[start:end]
             c = correcLabels[start:end]
+            r = probLabels[start:end]
             pred_test.append(p)
             corr_test.append(c)
+            prob_test.append(r)
             start = end
+
+    test_sentences = dp.read_origin_file("data/" + args.dataset + "/test.txt")
+    test_words = []
+    test_efs = []
+    for s in test_sentences:
+        temp = []
+        temp2 = []
+        for word, ef, lf in s:
+            temp.append(word)
+            temp2.append(ef)
+        test_words.append(temp)
+        test_efs.append(temp2)
 
     newSentencesTest = []
     for i, s in enumerate(test_words):
@@ -397,3 +417,33 @@ if __name__ == "__main__":
     p_valid, r_valid, f1_valid = dp.compute_precision_recall_f1(newLabelsValid, newPredsValid, args.flag,
                                                                 1)
     print("Test Result: Precision: {}, Recall: {}, F1: {}".format(p_valid, r_valid, f1_valid))
+
+    if args.output:
+        outputFile = "result/" + args.type + "_feature_pu_" + args.dataset + "_" + args.flag + "_" + str(
+            args.set) + ".txt"
+        with open(outputFile, "w") as fw:
+            for i, sent in enumerate(test_words):
+                preds = pred_test[i]
+                probs = prob_test[i]
+                corrs = test_efs[i]
+                for j, w in enumerate(sent):
+                    pred = preds[j]
+                    corr = corrs[j]
+                    prob = probs[j]
+                    fw.write(("{} {} {} {}\n").format(w, corr, pred, prob))
+                fw.write("\n")
+
+    if args.output:
+        outputFile = "result/" + args.type + "ada_pu_" + args.dataset + "_" + args.flag + "_" + str(
+            args.set) + ".txt"
+        with open(outputFile, "w") as fw:
+            for i, sent in enumerate(test_words):
+                preds = pred_test[i]
+                probs = prob_test[i]
+                corrs = test_efs[i]
+                for j, w in enumerate(sent):
+                    pred = preds[j]
+                    corr = corrs[j]
+                    prob = probs[j]
+                    fw.write(("{} {} {} {}\n").format(w, corr, pred, prob))
+                fw.write("\n")

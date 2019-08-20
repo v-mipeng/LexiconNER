@@ -175,17 +175,17 @@ class Trainer(object):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PU NER")
     # data
-    parser.add_argument('--lr', type=float, default=1e-4)
-    parser.add_argument('--beta', type=float, default=0.0)
-    parser.add_argument('--gamma', type=float, default=1.0)
-    parser.add_argument('--drop_out', type=float, default=0.5)
-    parser.add_argument('--m', type=float, default=0.3)
-    parser.add_argument('--flag', default="PER")
-    parser.add_argument('--dataset', default="conll2003")
-    parser.add_argument('--batch_size', type=int, default=100)
-    parser.add_argument('--print_time', type=int, default=1)
-    parser.add_argument('--pert', type=float, default=1.0)
-    parser.add_argument('--type', type=str, default='bnpu')  # bpu upu
+    parser.add_argument('--lr', type=float, default=1e-4,help='learning rate')
+    parser.add_argument('--beta', type=float, default=0.0,help='beta of pu learning (default 0.0)')
+    parser.add_argument('--gamma', type=float, default=1.0,help='gamma of pu learning (default 1.0)')
+    parser.add_argument('--drop_out', type=float, default=0.5, help = 'dropout rate')
+    parser.add_argument('--m', type=float, default=0.3, help='class balance rate')
+    parser.add_argument('--flag', default="PER" , help='entity type (PER/LOC/ORG/MISC)')
+    parser.add_argument('--dataset', default="conll2003",help='name of the dataset')
+    parser.add_argument('--batch_size', type=int, default=100,help='batch size for training and testing')
+    parser.add_argument('--print_time', type=int, default=1,help='epochs for printing result')
+    parser.add_argument('--pert', type=float, default=1.0,help='percentage of data use for training')
+    parser.add_argument('--type', type=str, default='bnpu',help='pu learning type (bnpu/bpu/upu)')  # bpu upu
 
     args = parser.parse_args()
 
