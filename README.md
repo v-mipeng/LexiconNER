@@ -1,5 +1,8 @@
 # LexiconNER
-This is the implementation of "Named Entity Recognition using Positive-Unlabeled Learning" published at ACL2019.
+This is the implementation of "[Distantly Supervised Named Entity Recognition using Positive-Unlabeled
+Learning](https://www.aclweb.org/anthology/P19-1231)" published at ACL 2019. The highlight of this work is it performs NER using only entity dictionaries without any labeled data.
+
+By the way, we recently publish our another work related to Chinese NER. It designs to augment Chinese NER with lexicons. The highlight of that work is it has high computational efficiency and at the same time, achieves comparative or better performance over existing methods. You can access the source code of that work and a hyper-link of its associated paper at [LexiconAugmentedNER](https://github.com/v-mipeng/LexiconAugmentedNER).
 
 ### Set up and run
 Download glove.6B.100d.txt
@@ -88,3 +91,14 @@ optional arguments:
 e.g.)
 `python adaptive\_pu\_model.py --model saved\_model/bnpu\_conll2003\_PER\_lr\_0.0001\_prior\_0.3\_beta\_0.0\_gamma\_1.0\_percent\_1.0 --flag PER --iter 1`
 Replace saved model names and iteration times when doing adaptive learning. And in the same iteration the iter number in dictionary generation and adaptive learning should be same.
+
+### Cite:
+
+Please cite our ACL 2019 paper:
+
+`@article{peng2019distantly,
+  title={Distantly Supervised Named Entity Recognition using Positive-Unlabeled Learning},
+  author={Peng, Minlong and Xing, Xiaoyu and Zhang, Qi and Fu, Jinlan and Huang, Xuanjing},
+  journal={Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics (ACL)},
+  year={2019}
+}`
