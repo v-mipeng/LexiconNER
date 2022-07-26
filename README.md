@@ -34,7 +34,7 @@ optional arguments:
 ```
 e.g.)
 Train on PER type of conll2003 dataset:
-`python feature_pu_model.py --dataset conll2003 --type PER`
+`python feature_pu_model.py --dataset conll2003 --flag PER`
 ** Evaluating**
 ```html
 python feature_pu_model_evl.py --model saved_model/bnpu_conll2003_PER_lr_0.0001_prior_0.3_beta_0.0_gamma_1.0_percent_1.0 --flag PER --dataset conll2003 --output 1
